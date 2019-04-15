@@ -1,3 +1,4 @@
+# Initialise empty blockchain list
 blockchain = []
 quit_app = False
 
@@ -8,8 +9,10 @@ def get_last_blockchain_value():
     return blockchain[-1]
 
 
-# Adds a transaction with a default value if no value is assigned to last_transaction parameter
-def add_transaction(transaction_amount, last_transaction):
+# Adds a transaction that accepts 2 arguments, transaction_amount and last_transaction.
+# last_transaction is an optional value as it has a default value if no value is assigned
+# to the last_transaction parameter
+def add_transaction(transaction_amount, last_transaction=[1]):
     if last_transaction == None:
         last_transaction = [1]
     blockchain.append([last_transaction, transaction_amount])
@@ -29,7 +32,8 @@ def print_block_elements():
         print(block)
 
 
-# Function to verify the blockchain. This prevent with tampering the blockchain        
+# Function to verify the blockchain. This prevents with tampering of the blockchain.
+# Checks if the first block of a given chain matches the entire previous block's value
 def verify_chain():
     block_index = 0
     is_valid = True
@@ -37,7 +41,7 @@ def verify_chain():
         if block_index == 0:
             block_index += 1
             continue
-        # Check if the current block contains the values of the previous block    
+        # Check if the current block contains the values of the previous block
         elif block[0] == blockchain[block_index - 1]:
             is_valid = True
         else:
@@ -56,25 +60,25 @@ while quit_app == False:
     user_choice = get_user_choice()
 
     if user_choice == '1':
-
         tx_amount = get_transaction_value()
         add_transaction(tx_amount, get_last_blockchain_value())
 
     elif user_choice == '2':
-
         print_block_elements()
 
     elif user_choice == '3':
-        if len(blockchain) >= 1:
-            blockchain[0] = [2]
-    elif user_choice == '4':
 
+        if len(blockchain) >= 1:
+            # Sets the first element in the blockchain to 2
+            blockchain[0] = [2]
+
+    elif user_choice == '4':
         print('Quitting Application')
         quit_app = True
 
     else:
         print('Invalid Choice')
-    
+
     if not verify_chain():
         print('Invalid Blockchain!')
         break
