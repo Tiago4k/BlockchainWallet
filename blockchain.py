@@ -8,7 +8,8 @@ def get_last_blockchain_value():
     return blockchain[-1]
 
 
-def add_transaction(transaction_amount, last_transaction=[1]):
+# Adds a transaction with a default value if no value is assigned to last_transaction parameter
+def add_transaction(transaction_amount, last_transaction):
     if last_transaction == None:
         last_transaction = [1]
     blockchain.append([last_transaction, transaction_amount])
@@ -28,6 +29,7 @@ def print_block_elements():
         print(block)
 
 
+# Function to verify the blockchain. This prevent with tampering the blockchain        
 def verify_chain():
     block_index = 0
     is_valid = True
@@ -35,6 +37,7 @@ def verify_chain():
         if block_index == 0:
             block_index += 1
             continue
+        # Check if the current block contains the values of the previous block    
         elif block[0] == blockchain[block_index - 1]:
             is_valid = True
         else:
@@ -42,7 +45,6 @@ def verify_chain():
             break
         block_index += 1
     return is_valid
-
 
 
 while quit_app == False:
