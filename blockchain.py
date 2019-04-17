@@ -30,24 +30,23 @@ def print_block_elements():
     print('Outputting Block...')
     for block in blockchain:
         print(block)
+    else:
+        print('*' * 20)
 
 
 # Function to verify the blockchain. This prevents with tampering of the blockchain.
 # Checks if the first block of a given chain matches the entire previous block's value
 def verify_chain():
-    block_index = 0
     is_valid = True
-    for block in blockchain:
+    for block_index in range(len(blockchain)):
         if block_index == 0:
-            block_index += 1
             continue
         # Check if the current block contains the values of the previous block
-        elif block[0] == blockchain[block_index - 1]:
+        elif blockchain[block_index][0] == blockchain[block_index - 1]:
             is_valid = True
         else:
             is_valid = False
             break
-        block_index += 1
     return is_valid
 
 
