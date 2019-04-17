@@ -1,6 +1,9 @@
 # Initialise empty blockchain list
-blockchain = []
+genesis_block = {'previous_hash': ' ', 'index': 0, 'transactions': []}
+blockchain = [genesis_block]
 quit_app = False
+open_transactions = []
+owner = 'Tiago'
 
 
 def get_last_blockchain_value():
@@ -12,14 +15,38 @@ def get_last_blockchain_value():
 # Adds a transaction that accepts 2 arguments, transaction_amount and last_transaction.
 # last_transaction is an optional value as it has a default value if no value is assigned
 # to the last_transaction parameter
-def add_transaction(transaction_amount, last_transaction=[1]):
-    if last_transaction == None:
-        last_transaction = [1]
-    blockchain.append([last_transaction, transaction_amount])
+def add_transaction(recipient, sender=owner, amount=1.0):
+
+    transaction = {
+        'sender': sender,
+        'recipient': recipient,
+        'amount': amount
+    }
+    open_transactions.append(transaction)
+
+
+def mine_block():
+    last_block = blockchain[-1]
+    hashed_block = ''
+
+    for key in last_block:
+        values = last_block[key]
+        hashed_block += str(values)
+
+    print(hashed_block)
+
+    block = {
+        'previous_hash': hashed_block,
+        'index': len(blockchain),
+        'transactions': open_transactions
+    }
+    blockchain.append(block)
 
 
 def get_transaction_value():
-    return float(input('Your transaction amount please: '))
+    tx_recipient = input('Please enter the recipient of the transaction: ')
+    tx_amount = float(input('Your transaction amount please: '))
+    return tx_recipient, tx_amount
 
 
 def get_user_choice():
@@ -53,33 +80,42 @@ def verify_chain():
 while quit_app == False:
     print('Please choose:')
     print('1: Add a new transaction value')
-    print('2: Output the blockchain')
-    print('3: Manipulate chain')
-    print('4: Exit application')
+    print('2: Mine a new block')
+    print('3: Output the blockchain')
+    print('H: Manipulate chain')
+    print('Q: Exit application')
     user_choice = get_user_choice()
 
     if user_choice == '1':
-        tx_amount = get_transaction_value()
-        add_transaction(tx_amount, get_last_blockchain_value())
+        tx_data = get_transaction_value()
+
+        # Unpacks the data in tuple
+        recipient, amount = tx_data
+        add_transaction(recipient, amount=amount)
+
+        print(open_transactions)
 
     elif user_choice == '2':
-        print_block_elements()
+        mine_block()
 
     elif user_choice == '3':
+        print_block_elements()
+
+    elif user_choice == 'H':
 
         if len(blockchain) >= 1:
             # Sets the first element in the blockchain to 2
             blockchain[0] = [2]
 
-    elif user_choice == '4':
+    elif user_choice == 'Q':
         print('Quitting Application')
         quit_app = True
 
     else:
         print('Invalid Choice')
 
-    if not verify_chain():
-        print('Invalid Blockchain!')
-        break
+    # if not verify_chain():
+    #     print('Invalid Blockchain!')
+    #     break
 
 print('Done.')
