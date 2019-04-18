@@ -1,9 +1,12 @@
-# Initialise empty blockchain list
+# Initialise blockchain using genesis_block
+# Using genesis_block allows us to add our first value 
+# to the blockchain without causing any errors
 genesis_block = {'previous_hash': ' ', 'index': 0, 'transactions': []}
 blockchain = [genesis_block]
-quit_app = False
 open_transactions = []
+# Owner to become a dynamic variable
 owner = 'Tiago'
+quit_app = False
 
 
 def get_last_blockchain_value():
@@ -12,11 +15,11 @@ def get_last_blockchain_value():
     return blockchain[-1]
 
 
-# Adds a transaction that accepts 2 arguments, transaction_amount and last_transaction.
-# last_transaction is an optional value as it has a default value if no value is assigned
-# to the last_transaction parameter
+# Adds a transaction that accepts 3 arguments.
+# Recipient must always be supplied whilst send and owner are optional.
+# Function creates a dictonary and adds it to open_transactions
 def add_transaction(recipient, sender=owner, amount=1.0):
-
+   
     transaction = {
         'sender': sender,
         'recipient': recipient,
@@ -28,7 +31,9 @@ def add_transaction(recipient, sender=owner, amount=1.0):
 def mine_block():
     last_block = blockchain[-1]
     hashed_block = ''
-
+    
+    # Searches for each key from the transaction dictonary in the blockchain
+    # and adds it to the hashed_block by concatenating the keys
     for key in last_block:
         values = last_block[key]
         hashed_block += str(values)
@@ -46,6 +51,8 @@ def mine_block():
 def get_transaction_value():
     tx_recipient = input('Please enter the recipient of the transaction: ')
     tx_amount = float(input('Your transaction amount please: '))
+    
+    # Concatenates the 2 variables into a tuple 
     return tx_recipient, tx_amount
 
 
@@ -84,6 +91,7 @@ while quit_app == False:
     print('3: Output the blockchain')
     print('H: Manipulate chain')
     print('Q: Exit application')
+    
     user_choice = get_user_choice()
 
     if user_choice == '1':
