@@ -1,5 +1,6 @@
 import functools
-
+import hashlib
+import json
 # Reward given to miners for creating a new block
 MINING_REWARD = 1.5
 # Starting block for the blockchain
@@ -24,7 +25,7 @@ def hash_block(block):
     Arguments:
         :block: The block that should be hashed.
     """
-    return '-'.join([str(block[key]) for key in block])
+    return hashlib.sha256(json.dumps(block).encode()).hexdigest()
 
 
 def mine_block():
@@ -33,6 +34,7 @@ def mine_block():
     last_block = blockchain[-1]
     # Hash the last block (=> to be able to compare it to the stored hash value)
     hashed_block = hash_block(last_block)
+
     # Miners should be rewarded, so let's create a reward transaction
     reward_transaction = {
         'sender': 'MINING',
@@ -114,27 +116,28 @@ def get_transaction_value():
 
 
 def get_balance(participants):
-    tx_sender = [[tx['amount'] for tx in block['transactions']
-                  if tx['sender'] == participants] for block in blockchain]
+    """Calculate and return the balance for a participant.
 
-    open_tx_sender = [tx['amount']
-                      for tx in open_transactions if tx['sender'] == participants]
+    Arguments:
+        :participant: The person for whom to calculate the balance.
+    """
+    # Fetch a list of all sent coin amounts for the given person (empty lists are returned if the person was NOT the sender)
+    # This fetches sent amounts of transactions that were already included in blocks of the blockchain
+    tx_sender = [[tx['amount'] for tx in block['transactions'] if tx['sender'] == participants] for block in blockchain]
+    
+    # Fetch a list of all sent coin amounts for the given person (empty lists are returned if the person was NOT the sender)
+    # This fetches sent amounts of open transactions (to avoid double spending)
+    open_tx_sender = [tx['amount'] for tx in open_transactions if tx['sender'] == participants]
 
     tx_sender.append(open_tx_sender)
+    amount_sent = functools.reduce(lambda tx_sum, tx_amt: tx_sum + sum(tx_amt) if len(tx_amt) > 0 else tx_sum + 0, tx_sender, 0)
+        
+    # This fetches received coin amounts of transactions that were already included in blocks of the blockchain
+    # We ignore open transactions here because you shouldn't be able to spend coins before the transaction was confirmed + included in a block
+    tx_recipient = [[tx['amount'] for tx in block['transactions'] if tx['recipient'] == participants] for block in blockchain]
+    amount_received = functools.reduce(lambda tx_sum, tx_amt: tx_sum + sum(tx_amt) if len(tx_amt) > 0 else tx_sum + 0, tx_recipient, 0)
 
-    amount_sent = 0
-    for tx in tx_sender:
-        if len(tx) > 0:
-            amount_sent += tx[0]
-
-    tx_recipient = [[tx['amount'] for tx in block['transactions']
-                     if tx['recipient'] == participants] for block in blockchain]
-
-    amount_received = 0
-    for tx in tx_recipient:
-        if len(tx) > 0:
-            amount_received += tx[0]
-
+    # Returns Total
     return amount_received - amount_sent
 
 ########################################################################################################
