@@ -1,8 +1,10 @@
 import functools
 import hashlib
 from collections import OrderedDict
+import json
+import pickle
 
-from hash_util import hash_block, hash_string_256 
+from hash_util import hash_block, hash_string_256
 
 # Reward given to miners for creating a new block
 MINING_REWARD = 1.5
@@ -21,6 +23,56 @@ open_transactions = []
 owner = 'Tiago'
 # Registered Participants: Ourselves & others sending/receiving coins
 participants = {'Tiago'}
+
+
+def load_data():
+    with open('blockchain.txt', mode='r') as f:
+        file_content = f.readlines()
+        #file_content = pickle.loads(f.read())
+
+        global blockchain
+        global open_transactions
+        # blockchain = file_content['chain']
+        # open_transactions = file_content['ot']
+
+        # Same as above but using json to store data in string format rather than binary.     
+
+        blockchain = json.loads(file_content[0][:-1])
+        updated_blockchain = []
+        for block in blockchain:
+            updated_block = {
+                'previous_hash': block['previous_hash'],
+                'index': block['index'],
+                'proof': block['proof'],
+                'transactions': [OrderedDict(
+                    [('sender', tx['sender']), ('recipient', tx['recipient']), ('amount', tx['amount'])]) for tx in block['transactions']]
+            } 
+            updated_blockchain.append(updated_block)
+        
+        open_transactions = json.loads(file_content[1])
+        blockchain = updated_blockchain
+
+        updated_transactions = []
+        for tx in open_transactions:
+            updated_transaction = OrderedDict(
+                    [('sender', tx['sender']), ('recipient', tx['recipient']), ('amount', tx['amount'])])
+            updated_transactions.append(updated_transaction)
+        open_transactions = updated_transactions
+
+
+load_data()
+
+
+def save_data():
+    with open('blockchain.txt', mode='w') as f:
+        f.write(json.dumps(blockchain))
+        f.write('\n')
+        f.write(json.dumps(open_transactions))
+        # save_data = {
+        #     'chain' : blockchain,
+        #     'ot': open_transactions
+        # }
+        # f.write(pickle.dumps(save_data))
 
 
 def valid_proof(transactions, last_hash, proof):
@@ -81,20 +133,21 @@ def get_last_blockchain_value():
 # Recipient must always be supplied whilst send and owner are optional.
 # Function creates a dictonary and adds it to open_transactions
 def add_transaction(recipient, sender=owner, amount=1.0):
-    
+
     # transaction = {
     #     'sender': sender,
     #     'recipient': recipient,
     #     'amount': amount
     # }
-    transaction = OrderedDict([('sender', sender),('recipient', recipient), ('amount', amount)])
+    transaction = OrderedDict(
+        [('sender', sender), ('recipient', recipient), ('amount', amount)])
 
     if verify_transaction(transaction):
         open_transactions.append(transaction)
         participants.add(sender)
         participants.add(recipient)
+        save_data()
         return True
-
     return False
 
 
@@ -112,7 +165,8 @@ def mine_block():
     #     'recipient': owner,
     #     'amount': MINING_REWARD
     # }
-    reward_transaction = OrderedDict([('sender', 'MINING'),('recipient', owner), ('amount', MINING_REWARD)])
+    reward_transaction = OrderedDict(
+        [('sender', 'MINING'), ('recipient', owner), ('amount', MINING_REWARD)])
 
     # Copy transaction instead of manipulating the original open_transactions list
     # This ensures that if for some reason the mining should fail, we don't have the reward transaction stored in the open transactions
@@ -126,7 +180,6 @@ def mine_block():
         'proof': proof
     }
     blockchain.append(block)
-
     return True
 
 
@@ -213,6 +266,7 @@ while quit_app == False:
     elif user_choice == '2':
         if mine_block():
             open_transactions = []
+            save_data()
 
     elif user_choice == '3':
         print_block_elements()
@@ -245,7 +299,7 @@ while quit_app == False:
         print('*' * 40)
         print('{}\'s Current Balance: {:6.2f}'.format(
             'Tiago', get_balance('Tiago')))
-        print('*' * 40 )
+        print('*' * 40)
         print('\n')
 
     if not verify_chain():
