@@ -20,12 +20,85 @@ participants = {'Tiago'}
 
 
 def hash_block(block):
-    """Hashes a block and returns a string representation of it.
+    """Hashes a block and returns a hash representation of it.
 
     Arguments:
         :block: The block that should be hashed.
     """
     return hashlib.sha256(json.dumps(block).encode()).hexdigest()
+
+
+def valid_proof(transactions, last_hash, proof):
+    guess = (str(transactions) + str(last_hash) + str(proof)).encode()
+    guess_hash = hashlib.sha256(guess).hexdigest()
+    print(guess_hash)
+    return guess_hash[0:3] == '00'
+
+
+def proof_of_work():
+    last_block = blockchain[-1]
+    last_hash = hash_block(last_block)
+    proof = 0
+    while valid_proof(open_transactions, last_hash, proof):
+        proof += 1
+    return proof
+
+
+def get_balance(participants):
+    """Calculate and return the balance for a participant.
+
+    Arguments:
+        :participant: The person for whom to calculate the balance.
+    """
+    # Fetch a list of all sent coin amounts for the given person (empty lists are returned if the person was NOT the sender)
+    # This fetches sent amounts of transactions that were already included in blocks of the blockchain
+    tx_sender = [[tx['amount'] for tx in block['transactions']
+                  if tx['sender'] == participants] for block in blockchain]
+
+    # Fetch a list of all sent coin amounts for the given person (empty lists are returned if the person was NOT the sender)
+    # This fetches sent amounts of open transactions (to avoid double spending)
+    open_tx_sender = [tx['amount']
+                      for tx in open_transactions if tx['sender'] == participants]
+
+    tx_sender.append(open_tx_sender)
+    amount_sent = functools.reduce(
+        lambda tx_sum, tx_amt: tx_sum + sum(tx_amt) if len(tx_amt) > 0 else tx_sum + 0, tx_sender, 0)
+
+    # This fetches received coin amounts of transactions that were already included in blocks of the blockchain
+    # We ignore open transactions here because you shouldn't be able to spend coins before the transaction was confirmed + included in a block
+    tx_recipient = [[tx['amount'] for tx in block['transactions']
+                     if tx['recipient'] == participants] for block in blockchain]
+    amount_received = functools.reduce(lambda tx_sum, tx_amt: tx_sum + sum(
+        tx_amt) if len(tx_amt) > 0 else tx_sum + 0, tx_recipient, 0)
+
+    # Returns Total
+    return amount_received - amount_sent
+
+
+def get_last_blockchain_value():
+    """ Returns the last value of the current blockchain. """
+    if len(blockchain) < 1:
+        return None
+    return blockchain[-1]
+
+
+# Adds a transaction that accepts 3 arguments.
+# Recipient must always be supplied whilst send and owner are optional.
+# Function creates a dictonary and adds it to open_transactions
+def add_transaction(recipient, sender=owner, amount=1.0):
+
+    transaction = {
+        'sender': sender,
+        'recipient': recipient,
+        'amount': amount
+    }
+    if verify_transaction(transaction):
+        open_transactions.append(transaction)
+        participants.add(sender)
+        participants.add(recipient)
+        return True
+
+    return False
 
 
 def mine_block():
@@ -55,35 +128,25 @@ def mine_block():
 
     return True
 
-# Adds a transaction that accepts 3 arguments.
-# Recipient must always be supplied whilst send and owner are optional.
-# Function creates a dictonary and adds it to open_transactions
-def add_transaction(recipient, sender=owner, amount=1.0):
 
-    transaction = {
-        'sender': sender,
-        'recipient': recipient,
-        'amount': amount
-    }
-    if verify_transaction(transaction):
-        open_transactions.append(transaction)
-        participants.add(sender)
-        participants.add(recipient)
-        return True
+def get_transaction_value():
+    tx_recipient = input('Please enter the recipient of the transaction: ')
+    tx_amount = float(input('Your transaction amount please: '))
 
-    return False
+    # Concatenates the 2 variables into a tuple
+    return tx_recipient, tx_amount
 
 
-################################ Verification Functions ##############################################
-def verify_transaction(transaction):
-    """Verify a transaction by checking whether the sender has sufficient coins.
+def get_user_choice():
+    return input('Your choice: ')
 
-    Arguments:
-        :transaction: The transaction that should be verified.
-    """
-    sender_balance = get_balance(transaction['sender'])
 
-    return sender_balance >= transaction['amount']
+def print_block_elements():
+    print('Outputting Block...')
+    for block in blockchain:
+        print(block)
+    else:
+        print('*' * 40)
 
 
 # Function to verify the blockchain. This prevents with tampering of the blockchain.
@@ -97,64 +160,17 @@ def verify_chain():
             return False
     return True
 
-########################################################################################################
 
-######################################### Getter Functions #############################################
-def get_last_blockchain_value():
-    """ Returns the last value of the current blockchain. """
-    if len(blockchain) < 1:
-        return None
-    return blockchain[-1]
-
-
-def get_transaction_value():
-    tx_recipient = input('Please enter the recipient of the transaction: ')
-    tx_amount = float(input('Your transaction amount please: '))
-
-    # Concatenates the 2 variables into a tuple
-    return tx_recipient, tx_amount
-
-
-def get_balance(participants):
-    """Calculate and return the balance for a participant.
+def verify_transaction(transaction):
+    """Verify a transaction by checking whether the sender has sufficient coins.
 
     Arguments:
-        :participant: The person for whom to calculate the balance.
+        :transaction: The transaction that should be verified.
     """
-    # Fetch a list of all sent coin amounts for the given person (empty lists are returned if the person was NOT the sender)
-    # This fetches sent amounts of transactions that were already included in blocks of the blockchain
-    tx_sender = [[tx['amount'] for tx in block['transactions'] if tx['sender'] == participants] for block in blockchain]
-    
-    # Fetch a list of all sent coin amounts for the given person (empty lists are returned if the person was NOT the sender)
-    # This fetches sent amounts of open transactions (to avoid double spending)
-    open_tx_sender = [tx['amount'] for tx in open_transactions if tx['sender'] == participants]
+    sender_balance = get_balance(transaction['sender'])
 
-    tx_sender.append(open_tx_sender)
-    amount_sent = functools.reduce(lambda tx_sum, tx_amt: tx_sum + sum(tx_amt) if len(tx_amt) > 0 else tx_sum + 0, tx_sender, 0)
-        
-    # This fetches received coin amounts of transactions that were already included in blocks of the blockchain
-    # We ignore open transactions here because you shouldn't be able to spend coins before the transaction was confirmed + included in a block
-    tx_recipient = [[tx['amount'] for tx in block['transactions'] if tx['recipient'] == participants] for block in blockchain]
-    amount_received = functools.reduce(lambda tx_sum, tx_amt: tx_sum + sum(tx_amt) if len(tx_amt) > 0 else tx_sum + 0, tx_recipient, 0)
+    return sender_balance >= transaction['amount']
 
-    # Returns Total
-    return amount_received - amount_sent
-
-########################################################################################################
-
-############################################ Printing Functions ########################################
-def get_user_choice():
-    return input('Your choice: ')
-
-
-def print_block_elements():
-    print('Outputting Block...')
-    for block in blockchain:
-        print(block)
-    else:
-        print('*' * 40)
-
-########################################################################################################
 
 quit_app = False
 
