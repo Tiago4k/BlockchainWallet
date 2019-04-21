@@ -35,7 +35,7 @@ def load_data():
         # blockchain = file_content['chain']
         # open_transactions = file_content['ot']
 
-        # Same as above but using json to store data in string format rather than binary.     
+        # Same as above but using json to store data in string format rather than binary.
 
         blockchain = json.loads(file_content[0][:-1])
         updated_blockchain = []
@@ -46,16 +46,16 @@ def load_data():
                 'proof': block['proof'],
                 'transactions': [OrderedDict(
                     [('sender', tx['sender']), ('recipient', tx['recipient']), ('amount', tx['amount'])]) for tx in block['transactions']]
-            } 
+            }
             updated_blockchain.append(updated_block)
-        
+
         open_transactions = json.loads(file_content[1])
         blockchain = updated_blockchain
 
         updated_transactions = []
         for tx in open_transactions:
             updated_transaction = OrderedDict(
-                    [('sender', tx['sender']), ('recipient', tx['recipient']), ('amount', tx['amount'])])
+                [('sender', tx['sender']), ('recipient', tx['recipient']), ('amount', tx['amount'])])
             updated_transactions.append(updated_transaction)
         open_transactions = updated_transactions
 
