@@ -1,13 +1,15 @@
 import functools
 import hashlib
 import json
+from collections import OrderedDict
 # Reward given to miners for creating a new block
 MINING_REWARD = 1.5
 # Starting block for the blockchain
 genesis_block = {
     'previous_hash': ' ',
     'index': 0,
-    'transactions': []
+    'transactions': [],
+    'proof': 100
 }
 # Initialise the empty blockchain list
 blockchain = [genesis_block]
@@ -25,21 +27,21 @@ def hash_block(block):
     Arguments:
         :block: The block that should be hashed.
     """
-    return hashlib.sha256(json.dumps(block).encode()).hexdigest()
+    return hashlib.sha256(json.dumps(block, sort_keys=True).encode()).hexdigest()
 
 
 def valid_proof(transactions, last_hash, proof):
     guess = (str(transactions) + str(last_hash) + str(proof)).encode()
     guess_hash = hashlib.sha256(guess).hexdigest()
     print(guess_hash)
-    return guess_hash[0:3] == '00'
+    return guess_hash[0:2] == '00'
 
 
 def proof_of_work():
     last_block = blockchain[-1]
     last_hash = hash_block(last_block)
     proof = 0
-    while valid_proof(open_transactions, last_hash, proof):
+    while not valid_proof(open_transactions, last_hash, proof):
         proof += 1
     return proof
 
@@ -86,12 +88,14 @@ def get_last_blockchain_value():
 # Recipient must always be supplied whilst send and owner are optional.
 # Function creates a dictonary and adds it to open_transactions
 def add_transaction(recipient, sender=owner, amount=1.0):
+    
+    # transaction = {
+    #     'sender': sender,
+    #     'recipient': recipient,
+    #     'amount': amount
+    # }
+    transaction = OrderedDict([('sender', sender),('recipient', recipient), ('amount', amount)])
 
-    transaction = {
-        'sender': sender,
-        'recipient': recipient,
-        'amount': amount
-    }
     if verify_transaction(transaction):
         open_transactions.append(transaction)
         participants.add(sender)
@@ -108,12 +112,15 @@ def mine_block():
     # Hash the last block (=> to be able to compare it to the stored hash value)
     hashed_block = hash_block(last_block)
 
+    proof = proof_of_work()
     # Miners should be rewarded, so let's create a reward transaction
-    reward_transaction = {
-        'sender': 'MINING',
-        'recipient': owner,
-        'amount': MINING_REWARD
-    }
+    # reward_transaction = {
+    #     'sender': 'MINING',
+    #     'recipient': owner,
+    #     'amount': MINING_REWARD
+    # }
+    reward_transaction = OrderedDict([('sender', 'MINING'),('recipient', owner), ('amount', MINING_REWARD)])
+
     # Copy transaction instead of manipulating the original open_transactions list
     # This ensures that if for some reason the mining should fail, we don't have the reward transaction stored in the open transactions
     copied_transactions = open_transactions[:]
@@ -122,7 +129,8 @@ def mine_block():
     block = {
         'previous_hash': hashed_block,
         'index': len(blockchain),
-        'transactions': copied_transactions
+        'transactions': copied_transactions,
+        'proof': proof
     }
     blockchain.append(block)
 
@@ -157,6 +165,9 @@ def verify_chain():
         if index == 0:
             continue
         if block['previous_hash'] != hash_block(blockchain[index - 1]):
+            return False
+        if not valid_proof(block['transactions'][:-1], block['previous_hash'], block['proof']):
+            print('Proof of work invalid!')
             return False
     return True
 
@@ -217,10 +228,7 @@ while quit_app == False:
         print(participants)
 
     elif user_choice == '5':
-        print('*' * 40)
-        print('{}\'s Current Balance: {:6.2f}'.format(
-            'Tiago', get_balance('Tiago')))
-        print('*' * 40)
+        pass
 
     elif user_choice == 'H' or user_choice == 'h':
 
@@ -240,10 +248,12 @@ while quit_app == False:
         print('Invalid Choice')
 
     if user_choice != 'Q' and user_choice != 'q':
+        print('\n')
         print('*' * 40)
         print('{}\'s Current Balance: {:6.2f}'.format(
             'Tiago', get_balance('Tiago')))
-        print('*' * 40)
+        print('*' * 40 )
+        print('\n')
 
     if not verify_chain():
         print_block_elements()
