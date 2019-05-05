@@ -1,12 +1,13 @@
 from blockchain import Blockchain
 from utility.verification import Verification
 from uuid import uuid4
+from wallet import Wallet
 
 class Node:
     def __init__(self):
-        #self.id = str(uuid4())
-        self.id = 'Tiago'
-        self.blockchain = Blockchain(self.id)
+        self.wallet = Wallet()
+        self.wallet.create_keys()
+        self.blockchain = Blockchain(self.wallet.public_key)
 
 
     def get_transaction_value(self):
@@ -34,6 +35,9 @@ class Node:
             print('2: Mine a new block')
             print('3: Output Blockchain')
             print('4: Output Balance')
+            print('5: Create Wallet')
+            print('6: Load Wallet')
+            print('7: Save Keys')
             print('Q: Exit application')
             print('\n')
 
@@ -45,7 +49,8 @@ class Node:
 
                 # Unpacks the data in tuple
                 recipient, amount = tx_data
-                if self.blockchain.add_transaction(recipient, self.id, amount=amount):
+                signature = self.wallet.sign_transaction(self.wallet.public_key, recipient, amount)
+                if self.blockchain.add_transaction(recipient, self.wallet.public_key, signature, amount=amount):
                     print('\n')
                     print('*' * 40)
                     print('Transaction Added!')
@@ -59,14 +64,26 @@ class Node:
                 # print(open_transactions)
 
             elif user_choice == '2':
-                self.blockchain.mine_block()
+                if not self.blockchain.mine_block():
+                    print('Mining Failed! Got a wallet?')
 
             elif user_choice == '3':
                 self.print_block_elements()
 
             elif user_choice == '4':
                 print('*' * 40)
-                print('{}\'s Current Balance: {:6.2f} \n'.format(self.id, self.blockchain.get_balance()))
+                print('{}\'s Current Balance: {:6.2f} \n'.format(self.wallet.public_key, self.blockchain.get_balance()))
+            
+            elif user_choice == '5':
+                self.wallet.create_keys()
+                self.blockchain = Blockchain(self.wallet.public_key)
+
+            elif user_choice == '6':
+                self.wallet.load_keys()
+                self.blockchain = Blockchain(self.wallet.public_key)
+
+            elif user_choice == '7':
+                self.wallet.save_keys()
 
             elif user_choice == 'Q' or user_choice == 'q':
                 print('Quitting Application \n')
@@ -78,8 +95,8 @@ class Node:
             if user_choice != 'Q' and user_choice != 'q' and user_choice != '4':
                 print('\n')
                 print('*' * 40)
-                print('{}\'s Current Balance: {:6.2f}'.format(
-                    self.id, self.blockchain.get_balance()))
+                print('{} Current Balance: {:6.2f}'.format(
+                    self.wallet.public_key, self.blockchain.get_balance()))
                 print('*' * 40)
                 print('\n')
 
@@ -89,8 +106,8 @@ class Node:
                 break
 
         print('*' * 40)
-        print('{}\'s Current Balance: {:6.2f} \n'.format(
-            self.id, self.blockchain.get_balance()))
+        print('{} Current Balance: {:6.2f} \n'.format(
+            self.wallet.public_key, self.blockchain.get_balance()))
         print('Application Closed.')
         print('*' * 40, '\n')
 
