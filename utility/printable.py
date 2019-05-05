@@ -1,3 +1,4 @@
 class Printable:
-        def __repr__(self):
-                return str(self.__dict__)
+    """A base class which implements printing functionality."""
+    def __repr__(self):
+        return str(self.__dict__)
