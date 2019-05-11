@@ -11,8 +11,10 @@ class Node:
         self.blockchain = Blockchain(self.wallet.public_key)
 
     def get_transaction_value(self):
-        """ Returns the input of the user (a new transaction amount) as a float. """
-        # Get the user input, transform it from a string to a float and store it in user_input
+        """ Returns the input of the user (a new transaction amount)
+        as a float. """
+        # Get the user input, transform it from a string to a float and store
+        # it in user_input
         tx_recipient = input('Enter the recipient of the transaction: ')
         tx_amount = float(input('Your transaction amount please: '))
         return tx_recipient, tx_amount
@@ -34,7 +36,7 @@ class Node:
     def listen_for_input(self):
         quit_app = False
 
-        while quit_app == False:
+        while not quit_app:
             print('\nPlease choose:')
             print('1: Add a new transaction value')
             print('2: Mine a new block')
@@ -56,7 +58,11 @@ class Node:
                 recipient, amount = tx_data
                 signature = self.wallet.sign_transaction(
                     self.wallet.public_key, recipient, amount)
-                if self.blockchain.add_transaction(recipient, self.wallet.public_key, signature, amount=amount):
+                if self.blockchain.add_transaction(
+                        recipient,
+                        self.wallet.public_key,
+                        signature,
+                        amount=amount):
                     print('\n')
                     print('*' * 40)
                     print('Transaction Added!')

@@ -1,5 +1,4 @@
 {
-    "python.linting.pylintEnabled": true,
     "python.pythonPath": "/Library/Frameworks/Python.framework/Versions/3.7/bin/python3",
-    "python.linting.enabled": false
+    "python.linting.pep8Enabled": true
 }
