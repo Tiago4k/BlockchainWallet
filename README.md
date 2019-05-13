@@ -17,7 +17,7 @@ Open Terminal and run the following commands:
 $ python node.py
 ```
 
-We can also spin up the server a desire port number:
+We can also spin up the server on a desired port number:
 ```sh
-$ python node.py -p <portnumber>
+$ python node.py -p 5001
 ```
